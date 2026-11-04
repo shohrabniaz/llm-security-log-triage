@@ -1,10 +1,17 @@
 {
-  "seq": 19,
   "title": "LLM-Assisted Security Log Triage and Alert Summarisation for SME SOCs",
-  "slug": "llm-assisted-security-log-triage-and-alert-summarisatio",
+  "old_slug": "llm-assisted-security-log-triage-and-alert-summarisatio",
+  "slug": "llm-security-log-triage",
   "folder": "Llm_Assisted_Security_Log_Triage_And_Alert",
   "kind": "detect",
-  "body_words": 252,
+  "body_words": 324,
+  "source": "SCI700",
   "project_id": "Project 20",
-  "source": "SCI700"
+  "public": {
+    "public_ok": true,
+    "tier": "public-ok",
+    "reasons": [
+      "Strong portfolio narrative; synthetic baseline is fine for public"
+    ]
+  }
 }
