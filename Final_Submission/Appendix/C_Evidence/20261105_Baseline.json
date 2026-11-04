@@ -1,0 +1,19 @@
+{
+  "title": "LLM-Assisted Security Log Triage and Alert Summarisation for SME SOCs",
+  "seq": 19,
+  "kind": "detect",
+  "mode": "SyntheticBaseline",
+  "generatedUtc": "2026-11-04T17:32:10.394120+00:00",
+  "author": "Md Shohrab Hossen Niaz",
+  "notes": "Baseline evidence model for portfolio reproducibility. Live lab evidence may be added later without renaming the repo.",
+  "artefacts": [
+    "capability model",
+    "comparison scorecard",
+    "dashboard mock metrics"
+  ],
+  "scoreModel": {
+    "baselineMaturity": 42,
+    "targetMaturity": 70,
+    "unit": "0-100 design-coverage index"
+  }
+}
