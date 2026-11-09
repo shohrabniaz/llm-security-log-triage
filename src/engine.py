@@ -1,37 +1,59 @@
 from __future__ import annotations
 import csv
 import json
+from collections import Counter, defaultdict
 from pathlib import Path
 
-SEVERITY_WEIGHT = {"critical": 40, "high": 25, "medium": 12, "low": 5, "info": 1}
-
-def load_findings(path: Path) -> list[dict]:
+def load_rows(path: Path) -> list[dict]:
     with path.open(newline="", encoding="utf-8") as f:
         return list(csv.DictReader(f))
 
-def prioritise(findings: list[dict]) -> list[dict]:
-    ranked = []
-    for f in findings:
-        sev = (f.get("severity") or "medium").lower()
-        cvss = float(f.get("cvss") or 0)
-        epss = float(f.get("epss") or 0)
-        item = dict(f)
-        item["priority_score"] = round(SEVERITY_WEIGHT.get(sev, 10) + cvss * 4 + epss * 30, 2)
-        ranked.append(item)
-    return sorted(ranked, key=lambda x: x["priority_score"], reverse=True)
+def score_text(text: str, positive: set[str], negative: set[str]) -> float:
+    tokens = [t.strip(".,!?").lower() for t in (text or "").split()]
+    if not tokens:
+        return 0.0
+    pos = sum(1 for t in tokens if t in positive)
+    neg = sum(1 for t in tokens if t in negative)
+    return round((pos - neg) / len(tokens), 4)
 
-def summarise(ranked: list[dict]) -> dict:
+def analyse(rows: list[dict]) -> dict:
+    positive = {"good", "great", "ok", "resolved", "safe", "legit", "ham"}
+    negative = {"bad", "phish", "malware", "urgent", "fraud", "spam", "breach", "fail", "risk"}
+    labeled = []
+    for r in rows:
+        text = r.get("text") or r.get("subject") or r.get("message") or ""
+        s = score_text(text, positive, negative)
+        label = r.get("label") or ("risk" if s < 0 else "benign")
+        labeled.append({**r, "score": s, "predicted": "risk" if s < 0 else "benign", "label": label})
+    by = Counter(x["predicted"] for x in labeled)
+    matched = sum(1 for x in labeled if x.get("label") and x["label"] == x["predicted"])
     return {
-        "finding_count": len(ranked),
-        "top_5": ranked[:5],
-        "critical_high": sum(1 for r in ranked if r.get("severity", "").lower() in {"critical", "high"}),
-        "mean_priority": round(sum(r["priority_score"] for r in ranked) / max(len(ranked), 1), 2),
+        "row_count": len(labeled),
+        "prediction_counts": dict(by),
+        "accuracy_if_labeled": round(matched / max(len(labeled), 1), 3),
+        "samples": labeled[:10],
     }
 
+def metric_dashboard(rows: list[dict], metric_col: str = "value") -> dict:
+    series = defaultdict(list)
+    for r in rows:
+        key = r.get("category") or r.get("day") or "all"
+        try:
+            series[key].append(float(r.get(metric_col) or r.get("metric") or 0))
+        except ValueError:
+            continue
+    summary = {
+        k: {"count": len(v), "avg": round(sum(v)/len(v), 2) if v else 0, "max": max(v) if v else 0, "min": min(v) if v else 0}
+        for k, v in series.items()
+    }
+    return {"categories": summary, "category_count": len(summary)}
+
 def run(data_dir: Path, out_dir: Path) -> dict:
-    ranked = prioritise(load_findings(data_dir / "findings.csv"))
-    summary = summarise(ranked)
+    rows = load_rows(data_dir / "dataset.csv")
+    if rows and ("text" in rows[0] or "subject" in rows[0] or "message" in rows[0]):
+        summary, name = analyse(rows), "ai_analysis.json"
+    else:
+        summary, name = metric_dashboard(rows), "analytics_summary.json"
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / "prioritised_findings.json").write_text(json.dumps(ranked, indent=2), encoding="utf-8")
-    (out_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    (out_dir / name).write_text(json.dumps(summary, indent=2), encoding="utf-8")
     return summary

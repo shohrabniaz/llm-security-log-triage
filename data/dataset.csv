@@ -1,0 +1,9 @@
+id,text,label
+1,Urgent llm-security-log-triage alert require immediate action,risk
+2,Weekly llm-security-log-triage status looks normal,benign
+3,Suspicious llm-security-log-triage anomaly detected please verify,risk
+4,Routine llm-security-log-triage maintenance completed,benign
+5,Fraud pattern in llm-security-log-triage submissions,risk
+6,Training notes for llm-security-log-triage operators,benign
+7,Phishing attempt referencing llm-security-log-triage,risk
+8,All clear report for llm-security-log-triage queue,benign
